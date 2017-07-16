@@ -1,29 +1,29 @@
 {
-  "name": "ssi-compile-webpack-plugin",
-  "version": "1.1.0",
-  "description": "compile ssi webpack plugin",
+  "name": "ssi-webpack-plugin",
+  "version": "1.0.0",
+  "description": "ssi include webpack plugin",
   "main": "index.js",
   "scripts": {
     "test": "webpack -d --config ./test/webpack.config.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/studzw/ssi-compile-webpack-plugin.git"
+    "url": "git+https://github.com/xiaomingplus/ssi-webpack-plugin.git"
   },
   "keywords": [
     "webpack",
     "ssi",
     "plugin"
   ],
-  "author": "studzw",
+  "author": "xiaomingplus fork by studzw",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/studzw/ssi-compile-webpack-plugin/issues"
+    "url": "https://github.com/xiaomingplus/ssi-webpack-plugin/issues"
   },
-  "homepage": "https://github.com/studzw/ssi-compile-webpack-plugin#readme",
+  "homepage": "https://github.com/xiaomingplus/ssi-webpack-plugin/#readme",
   "devDependencies": {
     "glob": "^7.1.1",
-    "html-loader": "^0.4.4",
+    "html-loader": "^0.4.5",
     "html-webpack-plugin": "^2.24.1",
     "webpack": "^1.13.3"
   },

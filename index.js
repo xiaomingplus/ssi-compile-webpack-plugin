@@ -33,7 +33,8 @@ class SSICompileWebpackplugin{
             publicPath: '',
             localBaseDir: '/',
             ext: '.html',
-            minify: false
+            minify: false,
+            variable:{}
         }, options)
     }
 
@@ -81,7 +82,24 @@ class SSICompileWebpackplugin{
 
 
             eachPromise(fileArr.map((item) => {
-                const src = item.split('"')[1]
+                let src = item.split('"')[1]
+                const isVar = /\${(.+?)}/.test(src);
+                if(isVar){
+                    var variableMap = this.setting.variable;
+                    try{
+                    src = src.replace(/\${(.+?)}/g,function(matchItem){
+                        var variable = matchItem.match(/\${(.+?)}/)
+                        if(variableMap[variable[1]]){
+                            return variableMap[variable[1]]
+                        }else{
+                            return ""
+                        }
+                    })
+                    }catch(e){
+                        throw new Error(e)
+                    }
+
+                }
                 return getSource(src, this.setting)
             }))
             .then((sucessResult) => {

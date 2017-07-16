@@ -16,18 +16,18 @@ function getSource(dir, setting){
 
 
     const isRemotePath = /https?\:\/\//g.test(dir)
+    const remoteBasePath = setting.remoteBasePath;
     const context = setting.localBaseDir
     const publicPath = setting.publicPath.trim()
-
+    console.log('replace ssi file',dir);
     if(publicPath !== ''){
         return Promise.resolve(`<!--#include file="${publicPath}/${path.basename(dir)}"-->`)
     }
-
-    if(isRemotePath){
-
+    if(isRemotePath || remoteBasePath){
+        var _url = remoteBasePath?(remoteBasePath+dir): dir;
         return new Promise((resolve, reject) => {
             request({
-                url: dir,
+                url:_url,
                 gzip: true,
                 timeout: 5000
             }, (err, res, body) => {
