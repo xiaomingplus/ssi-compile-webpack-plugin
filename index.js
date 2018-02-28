@@ -155,8 +155,14 @@ class SSICompileWebpackplugin{
             let extReg = new RegExp(this.setting.ext, 'g')
             if(extReg.test(item)){
 
-                htmlName.push(item)
-                compilation.fileDependencies.push(item)
+                htmlName.push(item);
+                try{
+                    compilation.fileDependencies.push(item);
+                }catch(e){
+                    if(e){
+                        compilation.fileDependencies.add(item);
+                    }
+                }
 
                 const str = source[item].source()
                 compilation.assets[item] = {
