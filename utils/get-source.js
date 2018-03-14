@@ -32,14 +32,13 @@ function getSource(dir, setting){
                 timeout: 5000
             }, (err, res, body) => {
 
-                if(err){
-                    reject(err)
+                if(err || res.statusCode !== 200){
+                    console.error(err);
+                    console.error('statusCode', res && res.statusCode);
+                    resolve('');
+                } else {
+                    resolve(body)
                 }
-
-                if(res.statusCode !== 200){
-                    reject(res.statusCode)
-                }
-                resolve(body)
 
             })
         })
