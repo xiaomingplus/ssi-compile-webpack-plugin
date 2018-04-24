@@ -28,7 +28,6 @@ function getSource(dir, setting){
         return new Promise((resolve, reject) => {
             request({
                 url:_url,
-                gzip: true,
                 timeout: 5000
             }, (err, res, body) => {
 
