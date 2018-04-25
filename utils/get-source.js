@@ -28,7 +28,11 @@ function getSource(dir, setting){
         return new Promise((resolve, reject) => {
             request({
                 url:_url,
-                timeout: 5000
+                gzip:true,
+                timeout: 5000,
+                headers:{
+                    'Cache-Control':'no-cache'
+                }
             }, (err, res, body) => {
 
                 if(err || res.statusCode !== 200){
