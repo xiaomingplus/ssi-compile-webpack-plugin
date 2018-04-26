@@ -12,6 +12,10 @@ module.exports = {
             publicPath: '',
             localBaseDir: '/',
             minify: false,
+            proxy:"",//可以使用代理
+            pathRewrite:{
+                '^api':"xxx",//支持正则替换
+            },
             remoteBasePath:"http://baidu.com",//如果传了此参数，则表示从远程http请求中获取ssi文件的内容
             variable:{
                 'QUERY_STRING':"test=1",//如果ssi文件地址里有引用变量,如${QUERY_STRING}，则会用此参数里的对应key的值替换
