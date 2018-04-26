@@ -12,7 +12,6 @@ module.exports = {
  */
 function createPathRewriter (rewriteConfig) {
   var rulesCache
-  console.log('rewriteConfig',rewriteConfig);
   if (!isValidRewriteConfig(rewriteConfig)) {
     return
   }
@@ -69,9 +68,3 @@ function parsePathRewriteRules (rewriteConfig) {
 }
 
 
-// var x=  createPathRewriter({
-//     "^api":"test"
-// });
-// console.log('x',x);
-// var y = x('api');
-// console.log('y',y);
