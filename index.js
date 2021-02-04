@@ -1,10 +1,9 @@
 'use strict'
 
-const path = require('path')
-const minify = require('html-minifier').minify
 const getSource = require('./utils/get-source.js')
 const eachPromise = require('./utils/each-promise.js')
 const pathRewrite = require('./utils/path-rewrite');
+const HtmlWebpackPlugin = require('html-webpack-plugin')
 
 
 /**
@@ -22,7 +21,6 @@ class SSICompileWebpackplugin {
      * @param {String} publicPath 资源基础路径,为空时不处理路径，不为空的时将拼接路径的`${publicPath}/${path.basename}`
      * @param {String} localBaseDir ssi本地路径的基础路径前缀
      * @param {String} ext 需要处理的后缀名，多个后缀可使用`|`分割
-     * @param {Boolean} minify true压缩, false不压缩
      * 
      * @memberOf SSICompileWebpackplugin
      */
@@ -31,8 +29,7 @@ class SSICompileWebpackplugin {
         this.setting = Object.assign({}, {
             publicPath: '',
             localBaseDir: '/',
-            ext: '.html',
-            minify: false,
+            ext: '\\.html',
             variable: {},
             pathRewrite: {
             }, //路径替换
@@ -41,104 +38,81 @@ class SSICompileWebpackplugin {
     }
 
 
-    apply(compile, callback) {
+    apply(compiler) {
+        compiler.hooks.compilation.tap("SSI Webpack Plugin", (compilation) => {
+            HtmlWebpackPlugin.getHooks(compilation)
+                .afterTemplateExecution
+                .tapPromise("SSI Webpack Plugin", (asset) => {
+                    const extReg = new RegExp(this.setting.ext, 'g')
 
-        compile.plugin('emit', (compilation, callback) => {
+                    if (!extReg.test(asset.outputName)) {
+                        return Promise.resolve(asset);
+                    }
 
-            const htmlNameArr = this.addFileToWebpackAsset(compilation)
-
-            if (htmlNameArr.length === 0) {
-                return callback()
-            }
-
-            eachPromise(htmlNameArr.map((item) => {
-                    return this.replaceSSIFile(compilation, item)
-                }))
-                .then(() => {
-                    callback()
-                }, () => {
-                    callback()
+                    return this.replaceSSIFile(asset)
                 })
-                .catch(() => {
-                    throw new Error('ssi资源替换出错')
-                })
-
-
-
-
         })
-
     }
 
 
-    replaceSSIFile(compilation, name) {
-        const includeFileReg = /<!--#\s*include\s+(file|virtual)=(['"])([^\r\n\s]+?)\2\s*(.*)-->/g
-        let source = compilation.assets[name].source().toString();
+    replaceSSIFile(asset) {
+        const includeFileReg = /<!--#\s*include\s+(file|virtual)=(['"])([^\r\n\s]+?)\2\s*-->/g
+        let source = asset.html;
         const fileArr = source.match(includeFileReg)
 
         if (!fileArr) {
-            Promise.resolve(source)
+            Promise.resolve(asset)
         }
+
         let replacePath = pathRewrite.create(this.setting.pathRewrite);
+
         return new Promise((resolve, reject) => {
             eachPromise(fileArr.map((item) => {
-                    let src = item.split('"')[1];
-                    if (replacePath) {
-                        src = replacePath(src);
+                let src = item.split('"')[1];
+                if (replacePath) {
+                    src = replacePath(src);
+                }
+                const isVar = /\${(.+?)}/.test(src);
+                if (isVar) {
+                    var variableMap = this.setting.variable;
+                    try {
+                        src = src.replace(/\${(.+?)}/g, function (matchItem) {
+                            var variable = matchItem.match(/\${(.+?)}/)
+                            if (variableMap[variable[1]]) {
+                                return variableMap[variable[1]]
+                            } else {
+                                return ""
+                            }
+                        })
+                    } catch (e) {
+                        throw new Error(e)
                     }
-                    const isVar = /\${(.+?)}/.test(src);
-                    if (isVar) {
-                        var variableMap = this.setting.variable;
-                        try {
-                            src = src.replace(/\${(.+?)}/g, function (matchItem) {
-                                var variable = matchItem.match(/\${(.+?)}/)
-                                if (variableMap[variable[1]]) {
-                                    return variableMap[variable[1]]
-                                } else {
-                                    return ""
-                                }
-                            })
-                        } catch (e) {
-                            throw new Error(e)
-                        }
 
-                    }
-                    return getSource(src, this.setting)
-                }))
+                }
+                return getSource(src, this.setting)
+            }))
                 .then((sucessResult) => {
 
                     fileArr.forEach((i, j) => {
-                        source = source.replace(i, function (matchItem) {
-                            return decodeURIComponent(matchItem = encodeURIComponent(sucessResult[j].data))
+                        source = source.replace(i, function () {
+                            return decodeURIComponent(encodeURIComponent(sucessResult[j].data))
                         })
                     })
 
-                    compilation.assets[name].source = () => {
-                        return this.setting.minify ? minify(source, {
-                            collapseWhitespace: true,
-                            minifyCSS: true,
-                            minifyJS: true
-                        }) : source
-                    }
+                    asset.html = source;
 
-                    resolve(sucessResult)
+                    resolve(asset)
                 }, (errResult) => {
 
                     fileArr.forEach((i, j) => {
-                        source = source.replace(i, function (matchItem) {
-                            return decodeURIComponent(matchItem = encodeURIComponent(errResult[j].data))
+                        source = source.replace(i, function () {
+                            return decodeURIComponent(encodeURIComponent(errResult[j].data))
                         })
                     })
 
-                    compilation.assets[name].source = () => {
-                        return this.setting.minify ? minify(source, {
-                            collapseWhitespace: true,
-                            minifyCSS: true,
-                            minifyJS: true
-                        }) : source
-                    }
+                    asset.html = source;
 
-                    reject(errResult)
+                    reject(asset)
                 })
                 .catch((err) => {
                     reject(err)
@@ -147,45 +121,6 @@ class SSICompileWebpackplugin {
         })
 
     }
-
-
-    addFileToWebpackAsset(compilation) {
-
-        const htmlName = []
-        const source = compilation.assets
-
-        Object.keys(source).forEach((item, index, array) => {
-            let extReg = new RegExp(this.setting.ext, 'g')
-            if (extReg.test(item)) {
-
-                htmlName.push(item);
-                try {
-                    compilation.fileDependencies.push(item);
-                } catch (e) {
-                    if (e) {
-                        compilation.fileDependencies.add(item);
-                    }
-                }
-
-                const str = source[item].source()
-                compilation.assets[item] = {
-                    source: function () {
-                        return str
-                    },
-                    size: function () {
-                        return str.length
-                    }
-                }
-
-
-            }
-        })
-
-        return htmlName
-    }
-
-
-
 }
 
 module.exports = SSICompileWebpackplugin

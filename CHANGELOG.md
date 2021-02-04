@@ -19,3 +19,8 @@
 ## 2.0.0
 
 * 发布npm测试
+
+## 3.0.0
+
+* webpack 5 support
+* droppped webpack <5 support

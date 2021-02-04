@@ -10,32 +10,32 @@ const SSICompileWebpackplugin = require('../index.js')
 const htmlArr = () => {
     const html = glob.sync('./test/*.html')
     let array = []
-    if(html.length > 0){
-        html.forEach((item, index, arr) => {
+    if (html.length > 0) {
+        html.forEach((item) => {
             array.push(new HtmlWebpackPlugin({
+                minify: true,
                 filename: `${path.basename(item)}`,
                 template: item,
                 inject: true
             }))
         })
-    } 
+    }
     return array
 }
 
 
-
-
 module.exports = {
     entry: './test/entry.js',
+    devtool: false,
     output: {
-        path: `./test/release`,
+        path: path.resolve(__dirname, 'test/release'),
         filename: `test.js`
     },
     module: {
-        loaders: [
-            {	
+        rules: [
+            {
                 test: /\.html$/,
-                loader: 'html?minimize=false'
+                use: 'html-loader?minimize=false'
             }
         ]
     },
